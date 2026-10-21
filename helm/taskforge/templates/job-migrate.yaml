@@ -1,0 +1,28 @@
+{{- if .Values.migration.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "taskforge.fullname" . }}-migrate
+  labels:
+    {{- include "taskforge.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["alembic", "upgrade", "head"]
+          env:
+            - name: DATABASE_URL
+              value: mysql+pymysql://{{ .Values.mariadb.auth.username }}:{{ .Values.mariadb.auth.password }}@{{ include "taskforge.mariadbHost" . }}:3306/{{ .Values.mariadb.auth.database }}
+            - name: SECRET_KEY
+              value: {{ .Values.secrets.secretKey | quote }}
+            - name: APP_ENV
+              value: {{ .Values.api.env.APP_ENV | quote }}
+{{- end }}

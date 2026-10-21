@@ -1,0 +1,12 @@
+replicaCount: 2
+api:
+  env:
+    APP_ENV: staging
+ingress:
+  hosts:
+    - host: staging.taskforge.example
+      paths:
+        - path: /
+          pathType: Prefix
+backup:
+  enabled: true

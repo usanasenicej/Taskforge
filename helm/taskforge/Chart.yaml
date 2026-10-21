@@ -1,0 +1,12 @@
+apiVersion: v2
+name: taskforge
+description: Multi-tenant Task & Project Management API
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - fastapi
+  - mariadb
+  - redis
+maintainers:
+  - name: TaskForge

@@ -1,0 +1,32 @@
+{{- if .Values.overdueScan.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "taskforge.fullname" . }}-overdue
+  labels:
+    {{- include "taskforge.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.overdueScan.schedule | quote }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: scan
+              image: curlimages/curl:8.11.1
+              env:
+                - name: INTERNAL_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "taskforge.fullname" . }}
+                      key: INTERNAL_API_KEY
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  curl -fsS -X POST \
+                    -H "X-Internal-Key: $INTERNAL_API_KEY" \
+                    http://{{ include "taskforge.fullname" . }}-api:{{ .Values.api.service.port }}/api/v1/internal/rpc/tasks.scan_overdue
+{{- end }}

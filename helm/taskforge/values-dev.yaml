@@ -1,0 +1,22 @@
+replicaCount: 1
+autoscaling:
+  enabled: false
+api:
+  env:
+    APP_ENV: development
+    APP_DEBUG: "true"
+ingress:
+  hosts:
+    - host: taskforge.local
+      paths:
+        - path: /
+          pathType: Prefix
+backup:
+  enabled: false
+serviceMonitor:
+  enabled: false
+podDisruptionBudget:
+  enabled: false
+mariadb:
+  persistence:
+    enabled: false

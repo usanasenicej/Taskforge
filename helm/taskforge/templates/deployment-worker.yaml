@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "taskforge.fullname" . }}-worker
+  labels:
+    {{- include "taskforge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "taskforge.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        {{- include "taskforge.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+    spec:
+      serviceAccountName: {{ include "taskforge.serviceAccountName" . }}
+      containers:
+        - name: worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "-m", "app.workers.worker"]
+          envFrom:
+            - configMapRef:
+                name: {{ include "taskforge.fullname" . }}-config
+            - secretRef:
+                name: {{ include "taskforge.fullname" . }}
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}

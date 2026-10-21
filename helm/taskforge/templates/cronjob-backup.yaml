@@ -1,0 +1,36 @@
+{{- if .Values.backup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "taskforge.fullname" . }}-backup
+  labels:
+    {{- include "taskforge.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: {{ .Values.mariadb.image }}
+              env:
+                - name: MYSQL_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "taskforge.fullname" . }}
+                      key: MARIADB_PASSWORD
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  FILE="/tmp/taskforge-$(date -u +%Y%m%dT%H%M%SZ).sql"
+                  mysqldump -h {{ include "taskforge.mariadbHost" . }} -u {{ .Values.mariadb.auth.username }} {{ .Values.mariadb.auth.database }} > "$FILE"
+                  echo "Wrote $FILE ($(wc -c < "$FILE") bytes)"
+                  {{- if .Values.backup.s3.enabled }}
+                  echo "Upload to S3/MinIO would happen here (aws s3 cp $FILE s3://{{ .Values.backup.s3.bucket }}/)"
+                  {{- end }}
+{{- end }}

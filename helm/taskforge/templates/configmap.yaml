@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "taskforge.fullname" . }}-config
+  labels:
+    {{- include "taskforge.labels" . | nindent 4 }}
+data:
+  APP_NAME: TaskForge
+  APP_ENV: {{ .Values.api.env.APP_ENV | quote }}
+  APP_DEBUG: {{ .Values.api.env.APP_DEBUG | quote }}
+  JSON_LOGS: {{ .Values.api.env.JSON_LOGS | quote }}
+  LOG_LEVEL: {{ .Values.api.env.LOG_LEVEL | quote }}
+  API_PREFIX: {{ .Values.api.env.API_PREFIX | quote }}
+  WEB_CONCURRENCY: {{ .Values.api.env.WEB_CONCURRENCY | quote }}
+  CORS_ORIGINS: {{ .Values.config.corsOrigins | quote }}
+  SMTP_HOST: {{ .Values.config.smtpHost | quote }}
+  SMTP_PORT: {{ .Values.config.smtpPort | quote }}
+  SMTP_FROM: {{ .Values.config.smtpFrom | quote }}
+  REDIS_URL: redis://{{ include "taskforge.redisHost" . }}:6379/0
+  RQ_QUEUE_NAME: taskforge

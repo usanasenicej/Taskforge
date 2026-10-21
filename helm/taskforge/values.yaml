@@ -1,0 +1,137 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/example/taskforge
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+
+api:
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    requests:
+      cpu: 150m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    APP_ENV: production
+    APP_DEBUG: "false"
+    JSON_LOGS: "true"
+    LOG_LEVEL: INFO
+    API_PREFIX: /api/v1
+    WEB_CONCURRENCY: "2"
+
+worker:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 400m
+      memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+  hosts:
+    - host: taskforge.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  # - secretName: taskforge-tls
+  #   hosts:
+  #     - taskforge.local
+
+mariadb:
+  enabled: true
+  image: mariadb:11.4
+  auth:
+    database: taskforge
+    username: taskforge
+    password: taskforge
+    rootPassword: change-root
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+redis:
+  enabled: true
+  image: redis:7.4-alpine
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+secrets:
+  secretKey: change-me-to-a-long-random-string
+  internalApiKey: change-me-internal-key
+
+migration:
+  enabled: true
+
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  s3:
+    enabled: false
+    endpoint: ""
+    bucket: taskforge-backups
+    accessKey: ""
+    secretKey: ""
+
+overdueScan:
+  enabled: true
+  schedule: "*/15 * * * *"
+
+networkPolicy:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+
+config:
+  corsOrigins: '["https://taskforge.local"]'
+  smtpHost: ""
+  smtpPort: "587"
+  smtpFrom: "noreply@taskforge.local"
+  smtpUser: ""
+  smtpPassword: ""
