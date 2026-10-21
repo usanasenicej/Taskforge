@@ -1,0 +1,23 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+      - name: Deploy with Helm
+        run: |
+          echo "Wire kubeconfig via secrets, then:"
+          echo "helm upgrade --install taskforge ./helm/taskforge \\"
+          echo "  --namespace taskforge --create-namespace \\"
+          echo "  -f ./helm/taskforge/values-prod.yaml \\"
+          echo "  --set image.repository=ghcr.io/${{ github.repository }} \\"
+          echo "  --set image.tag=${{ github.sha }}"
