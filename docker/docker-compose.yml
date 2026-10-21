@@ -1,0 +1,115 @@
+name: taskforge
+
+services:
+  mariadb:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: taskforge
+      MARIADB_USER: taskforge
+      MARIADB_PASSWORD: taskforge
+      MARIADB_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env.example
+    environment:
+      DATABASE_URL: mysql+pymysql://taskforge:taskforge@mariadb:3306/taskforge
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: development
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+
+  seed:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env.example
+    environment:
+      DATABASE_URL: mysql+pymysql://taskforge:taskforge@mariadb:3306/taskforge
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: development
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    command: ["python", "-m", "scripts.seed"]
+    restart: "no"
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env.example
+    environment:
+      DATABASE_URL: mysql+pymysql://taskforge:taskforge@mariadb:3306/taskforge
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: development
+      APP_DEBUG: "true"
+      JSON_LOGS: "true"
+      SECRET_KEY: local-dev-secret
+      INTERNAL_API_KEY: local-internal-key
+      WEB_CONCURRENCY: "2"
+    ports:
+      - "8000:8000"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      seed:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env.example
+    environment:
+      DATABASE_URL: mysql+pymysql://taskforge:taskforge@mariadb:3306/taskforge
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: development
+      SECRET_KEY: local-dev-secret
+    depends_on:
+      redis:
+        condition: service_healthy
+      mariadb:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      seed:
+        condition: service_completed_successfully
+    command: ["python", "-m", "app.workers.worker"]
+    restart: unless-stopped
+
+volumes:
+  mariadb_data:
