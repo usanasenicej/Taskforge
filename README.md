@@ -200,3 +200,5 @@ pytest -q
 - Fine-grained audit log table and Keycloak/OIDC
 - Custom HPA metrics from queue depth
 - Read replicas and online schema changes for large tenants
+
+- Developed by Usanase Nice Josiane
