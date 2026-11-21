@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -73,6 +73,15 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"
+
+    @model_validator(mode="after")
+    def reject_placeholder_secrets(self) -> "Settings":
+        if self.app_env != "production":
+            return self
+        placeholders = {"", "change-me", "change-me-internal-key"}
+        if self.secret_key in placeholders or self.internal_api_key in placeholders:
+            raise ValueError("SECRET_KEY and INTERNAL_API_KEY must be set to non-default values in production")
+        return self
 
 
 @lru_cache
