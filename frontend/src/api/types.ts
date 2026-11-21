@@ -120,6 +120,8 @@ export interface OrgEvent {
 
 export interface Health {
   status: "ok" | "degraded";
+  version?: string;
+  env?: string;
   checks: { database: boolean; redis: boolean };
   redis_backend: "redis" | "memory";
   database_backend: string;

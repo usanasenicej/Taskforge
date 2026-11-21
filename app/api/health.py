@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Response, status
 from sqlalchemy import text
 
+from app import __version__
 from app.config import get_settings
 from app.core import grafana_cloud
 from app.core.cache import get_redis, redis_backend
@@ -9,9 +10,14 @@ from app.db.session import engine
 router = APIRouter()
 
 
+def _identity() -> dict:
+    settings = get_settings()
+    return {"version": __version__, "env": settings.app_env}
+
+
 @router.get("/health/live", include_in_schema=False)
 def live() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", **_identity()}
 
 
 @router.get("/health/ready", include_in_schema=False)
@@ -28,6 +34,7 @@ def ready(response: Response) -> dict:
     except Exception:
         pass
     body = {
+        **_identity(),
         "checks": checks,
         "redis_backend": redis_backend(),
         "database_backend": engine.dialect.name,

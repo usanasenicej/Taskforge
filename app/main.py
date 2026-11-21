@@ -89,4 +89,9 @@ app.include_router(api_router, prefix=settings.api_prefix)
 
 @app.get("/")
 def root() -> dict:
-    return {"name": settings.app_name, "version": __version__, "docs": "/docs"}
+    return {
+        "name": settings.app_name,
+        "version": __version__,
+        "docs": "/docs",
+        "health": "/health/ready",
+    }
