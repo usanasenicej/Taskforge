@@ -1,0 +1,11 @@
+target-version = "py312"
+line-length = 120
+src = ["app", "tests", "scripts"]
+
+[lint]
+select = ["E", "F"]
+ignore = ["E501", "E402"]
+
+[lint.per-file-ignores]
+# SQLAlchemy relationships use quoted forward references.
+"app/models/**" = ["F821"]
