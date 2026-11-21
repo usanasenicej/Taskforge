@@ -10,6 +10,7 @@ from app.api import api_router
 from app.api.health import router as health_router
 from app.config import get_settings
 from app.core import grafana_cloud
+from app.core.middleware import RequestIdMiddleware
 from app.core.telemetry import db_pool_checked_out, queue_length, service_up
 from app.logging import configure_logging
 
@@ -53,6 +54,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(RequestIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
